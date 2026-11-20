@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>¿Por qué el procesador espera? Cuello de botella CPU–memoria</title>
+<meta name="description" content="Página educativa e interactiva sobre el cuello de botella entre el procesador y la memoria. Uniciencia · ISO 203.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f2f5f7;--ink:#17262f;--mute:#4f6470;--line:#c9d4db;--teal:#0b7a85;--teal-d:#085c64;--amber:#d99a00;--ok:#1b7a43;--bad:#b3261e;--code:#10202a;--card:#fff}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.65 "IBM Plex Sans",system-ui,sans-serif}
+a{color:var(--teal-d)}
+:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+header.top{display:flex;gap:1.2rem;flex-wrap:wrap;justify-content:space-between;align-items:center;padding:.8rem 5vw;border-bottom:1px solid var(--line);background:#fff;position:sticky;top:0;z-index:5}
+header.top strong{font-family:"IBM Plex Serif",serif}
+nav a{margin-right:1rem;text-decoration:none;font-size:.95rem}
+main{max-width:980px;margin:auto;padding:0 5vw}
+section{padding:3.5rem 0;border-bottom:1px solid var(--line)}
+h1,h2,h3{font-family:"IBM Plex Serif",Georgia,serif;line-height:1.2;margin:0 0 1rem}
+h1{font-size:clamp(2.1rem,6vw,3.4rem);max-width:16ch}
+h2{font-size:clamp(1.6rem,4vw,2.1rem)}
+h3{font-size:1.2rem}
+p{max-width:68ch}
+.lead{font-size:1.2rem;color:var(--mute)}
+.hero{display:grid;gap:2rem;grid-template-columns:1fr;padding-top:3rem}
+@media(min-width:860px){.hero{grid-template-columns:1fr 1.05fr;align-items:center}}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:1.4rem}
+.panel h3{margin-bottom:.4rem}
+label{display:block;font-weight:500;margin:.6rem 0 .3rem}
+input[type=range]{width:100%;accent-color:var(--teal)}
+.bar{display:flex;height:2.4rem;border-radius:4px;overflow:hidden;background:var(--line);margin:.8rem 0;font-size:.85rem;font-weight:600}
+.bar .work{background:var(--teal);color:#fff;display:flex;align-items:center;padding-left:.6rem;transition:width .25s;white-space:nowrap;overflow:hidden}
+.bar .wait{background:var(--amber);color:#2b2000;flex:1;display:flex;align-items:center;padding-left:.6rem;white-space:nowrap;overflow:hidden}
+.stats{display:flex;gap:1.5rem;flex-wrap:wrap;color:var(--mute);font-size:.95rem}
+.stats b{color:var(--ink);font-size:1.15rem}
+.grid3{display:grid;gap:1.2rem;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.grid3>div{border-left:4px solid var(--teal);padding-left:1rem}
+table{border-collapse:collapse;width:100%;margin-top:1rem;background:#fff;font-size:.95rem}
+th,td{border:1px solid var(--line);padding:.55rem .7rem;text-align:left}
+th{background:#e4ecf0}
+.tw{overflow-x:auto}
+.steps{list-style:none;padding:0;counter-reset:s;display:grid;gap:.8rem;max-width:68ch}
+.steps li{counter-increment:s;padding-left:2.6rem;position:relative}
+.steps li:before{content:counter(s);position:absolute;left:0;top:0;width:1.9rem;height:1.9rem;border-radius:50%;background:var(--teal);color:#fff;text-align:center;font-weight:600;line-height:1.9rem}
+.opt{display:block;width:100%;text-align:left;margin:.45rem 0;padding:.7rem .9rem;font:inherit;background:#fff;border:1.5px solid var(--line);border-radius:5px;cursor:pointer;color:var(--ink)}
+.opt:hover{border-color:var(--teal)}
+.opt.ok{border-color:var(--ok);background:#e6f4ec}
+.opt.no{border-color:var(--bad);background:#fbeceb}
+.fb{margin-top:.6rem;padding:.7rem .9rem;border-left:4px solid var(--teal);background:#e8f2f4;display:none}
+.fb.show{display:block}
+.btn{font:inherit;font-weight:600;background:var(--teal-d);color:#fff;border:0;border-radius:5px;padding:.6rem 1.1rem;cursor:pointer}
+.btn.alt{background:#fff;color:var(--teal-d);border:1.5px solid var(--teal-d)}
+.tabs{display:flex;gap:.5rem;margin:1rem 0 0;flex-wrap:wrap}
+.tabs button{border-radius:5px 5px 0 0}
+pre{margin:0;background:var(--code);color:#dbe8ee;padding:1.1rem;overflow-x:auto;font:.86rem/1.55 "IBM Plex Mono",monospace;border-radius:0 6px 6px 6px;max-height:520px}
+.oop{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));margin-top:1.4rem}
+.oop div{background:#fff;border:1px solid var(--line);border-radius:6px;padding:1rem}
+.oop code,p code{font-family:"IBM Plex Mono",monospace;font-size:.88em;background:#e4ecf0;padding:.1em .35em;border-radius:3px}
+.score{font-weight:600;margin-top:1rem}
+footer{max-width:980px;margin:auto;padding:2rem 5vw 3rem;color:var(--mute);font-size:.92rem}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+select{font:inherit;padding:.4rem .5rem;border:1.5px solid var(--line);border-radius:5px;background:#fff;color:var(--ink)}
+.sq{display:inline-block;width:1.6rem;height:1.6rem;border-radius:3px;margin:2px}
+.sq.h{background:var(--teal)}.sq.m{background:var(--amber)}
+.chips{display:flex;flex-wrap:wrap;gap:.6rem;margin:.8rem 0}
+.chip{font:inherit;font-weight:600;padding:.6rem 1rem;border:1.5px solid var(--teal-d);background:#fff;color:var(--teal-d);border-radius:5px;cursor:pointer}
+.chip.done{background:var(--ok);border-color:var(--ok);color:#fff;cursor:default}
+.chip.bad{border-color:var(--bad);background:#fbeceb}
+.row{display:flex;gap:.8rem;align-items:center;flex-wrap:wrap;margin:.5rem 0}
+.retos h3{margin-top:2.4rem}
+.chk{list-style:none;padding:0;margin:.6rem 0}
+.chk li{margin:.5rem 0}
+.chk label{display:flex;gap:.6rem;align-items:flex-start;font-weight:400;margin:0;cursor:pointer}
+.chk input{margin-top:.45rem;accent-color:var(--teal);width:1.1rem;height:1.1rem;flex:none}
+.chk input:checked+span{color:var(--mute);text-decoration:line-through}
+.chip.sel{background:var(--teal-d);color:#fff}
+.note{border-left:4px solid var(--amber);background:#fff7de;padding:.7rem .9rem;margin:1rem 0;max-width:68ch}
+</style>
+</head>
+<body>
+<header class="top">
+  <strong>Cuello de botella CPU–memoria</strong>
+  <nav aria-label="Secciones"><a href="#aprender">Aprender</a><a href="#problema">Actividad</a><a href="#solucion">Qué hacer</a><a href="#juegos">Retos</a><a href="#repaso">Repaso</a><a href="#referencias">Referencias</a></nav>
+</header>
+<main>
+
+<section class="hero" id="inicio">
+  <div>
+    <h1>Tu procesador es rápido. A veces solo está esperando.</h1>
+    <p class="lead">Un computador no es tan veloz como su pieza más rápida, sino como su pieza más lenta en el camino de los datos. Aquí aprenderás por qué, sin necesidad de saber de computadores.</p>
+    <p><a class="btn" style="text-decoration:none;display:inline-block" href="#aprender">Empezar a aprender</a></p>
+  </div>
+  <div class="panel" aria-labelledby="demoT">
+    <h3 id="demoT">Pruébalo: ¿cuánto trabaja la CPU?</h3>
+    <p style="margin:0;color:var(--mute);font-size:.95rem">La caché es una mini-memoria muy rápida. Mueve el control para ver qué pasa cuando el dato casi siempre está ahí… o casi nunca.</p>
+    <label for="hit">Veces que el dato está en la caché: <b id="hitv">90</b> %</label>
+    <input id="hit" type="range" min="0" max="100" value="90">
+    <div class="bar" role="img" aria-label="Tiempo de trabajo frente a tiempo de espera"><div class="work" id="work">Trabaja</div><div class="wait" id="wait">Espera</div></div>
+    <div class="stats"><span>Tiempo por dato<br><b id="t">–</b></span><span>Uso útil de la CPU<br><b id="u">–</b></span></div>
+  </div>
+</section>
+
+<section id="aprender">
+  <h2>Primero: aprende las tres piezas</h2>
+  <p class="lead">Imagina una cocina. Los términos técnicos vienen después de la imagen.</p>
+  <div class="grid3">
+    <div><h3>Procesador (CPU)</h3><p><b>El cocinero.</b> Ejecuta las instrucciones y hace los cálculos. Puede trabajar muy rápido, pero solo si tiene los ingredientes a la mano.</p></div>
+    <div><h3>Memoria caché</h3><p><b>El mesón de trabajo.</b> Es pequeña y está pegada al cocinero. Guarda lo que acaba de usar o lo que probablemente usará enseguida. Se divide en niveles L1, L2 y L3.</p></div>
+    <div><h3>Memoria RAM</h3><p><b>La despensa del restaurante.</b> Cabe mucho más, pero ir hasta allá toma tiempo. Mientras el cocinero camina, no cocina.</p></div>
+  </div>
+  <h3 style="margin-top:2.2rem">La jerarquía de memoria</h3>
+  <p>Lo rápido es pequeño y caro; lo grande es lento y barato. Por eso un computador combina varios niveles. Las cifras son valores típicos de ejemplo, no medidas de un equipo concreto.</p>
+  <div class="tw"><table>
+    <tr><th>Nivel</th><th>Analogía</th><th>Velocidad (aprox.)</th><th>Capacidad (aprox.)</th></tr>
+    <tr><td>Caché L1</td><td>Manos del cocinero</td><td>~1 ns</td><td>decenas de KB</td></tr>
+    <tr><td>Caché L2 / L3</td><td>Mesón de trabajo</td><td>~4–15 ns</td><td>cientos de KB a varios MB</td></tr>
+    <tr><td>RAM</td><td>Despensa</td><td>~80 ns</td><td>varios GB</td></tr>
+  </table></div>
+  <h3 style="margin-top:2.2rem">¿Por qué funciona la caché? La localidad</h3>
+  <p><b>Localidad temporal:</b> lo que usaste hace un momento probablemente lo usarás otra vez. <b>Localidad espacial:</b> si usas un dato, probablemente usarás los que están al lado. Los programas se comportan así, y por eso una caché pequeña acierta tanto.</p>
+  <h3 style="margin-top:2.2rem">Qué es el cuello de botella</h3>
+  <p>Ocurre cuando una parte del sistema limita a todas las demás. Si el cocinero cocina en segundos pero la despensa tarda minutos en entregar, el restaurante sale lento aunque contrates al mejor cocinero. Subir solo la velocidad de la CPU no garantiza un computador proporcionalmente más rápido.</p>
+</section>
+
+<section id="problema">
+  <h2>Actividad: encuentra la demora y elige una solución</h2>
+  <p class="lead">Lee cada situación y escoge la mejor alternativa. Recibirás una explicación de por qué sirve y cuáles son sus límites.</p>
+  <ol class="steps">
+    <li><b>Aprender</b> las tres piezas (ya lo hiciste).</li>
+    <li><b>Reconocer</b> qué causa la espera en cada situación.</li>
+    <li><b>Escoger</b> una alternativa y leer su explicación.</li>
+    <li><b>Revisar</b> lo aprendido en el repaso final.</li>
+  </ol>
+  <div id="escenarios"></div>
+</section>
+
+<section id="solucion">
+  <h2>¿Qué hago si mi computador va lento?</h2>
+  <p class="lead">Antes de llamar a un técnico, tú mismo puedes averiguar dónde está la espera y resolver la mayoría de los casos. Solo necesitas 5 minutos y un computador con Windows.</p>
+
+  <h3>Paso 1: mira qué está saturado</h3>
+  <ol class="steps">
+    <li>Presiona <b>Ctrl + Shift + Esc</b> para abrir el Administrador de tareas.</li>
+    <li>Entra a <b>Rendimiento</b> y mira CPU, Memoria y Disco mientras el equipo va lento.</li>
+    <li>Fíjate cuál se mantiene casi siempre por encima del 85–90 %. Esa es la pieza que está haciendo esperar a las demás.</li>
+  </ol>
+
+  <h3 style="margin-top:2rem">Paso 2: elige lo que ves y sigue la lista</h3>
+  <div class="chips" id="sint" role="group" aria-label="Síntoma"></div>
+  <div class="panel" id="plan" aria-live="polite" style="display:none"></div>
+
+  <h3 style="margin-top:2.4rem">¿Qué puedo mejorar yo y qué no?</h3>
+  <div class="tw"><table>
+    <tr><th>Qué</th><th>¿Lo puedo cambiar yo?</th><th>Detalle</th></tr>
+    <tr><td>Hábitos (cerrar programas, apps de inicio)</td><td>Sí, gratis</td><td>Es lo primero que hay que probar.</td></tr>
+    <tr><td>Disco: de mecánico (HDD) a SSD</td><td>Casi siempre sí</td><td>Suele ser la mejora que más se nota en equipos viejos.</td></tr>
+    <tr><td>Memoria RAM</td><td>A veces</td><td>Depende del equipo; en muchos portátiles viene soldada.</td></tr>
+    <tr><td>Memoria caché</td><td>No</td><td>Está dentro del procesador. Solo se elige al comprar, fijándote en cuánta trae.</td></tr>
+    <tr><td>Procesador</td><td>Rara vez conviene</td><td>Casi nunca es el cambio más barato ni el más útil.</td></tr>
+  </table></div>
+
+  <div class="note"><b>Cuándo sí buscar un técnico:</b> si el equipo se apaga solo, sale pantalla azul con frecuencia, el disco hace ruidos raros, se calienta mucho aunque lo hayas limpiado, o si tiene garantía y vas a abrirlo (abrirlo puede anularla). Si vas a abrir un equipo, apágalo y desconéctalo antes.</div>
+</section>
+
+<section id="juegos" class="retos">
+  <h2>Más actividades para practicar</h2>
+  <p class="lead">Cuatro retos cortos. Puedes repetirlos las veces que quieras.</p>
+
+  <h3>Reto 1: ordena la jerarquía</h3>
+  <p>Toca los niveles de memoria del <b>más rápido al más lento</b>.</p>
+  <div class="chips" id="ord"></div>
+  <div class="fb" id="ordfb" aria-live="polite"></div>
+  <button class="btn alt" id="ordreset" style="margin-top:.6rem">Reiniciar</button>
+
+  <h3>Reto 2: pide 20 datos y mira qué pasa</h3>
+  <p>Elige el tamaño de la caché y pídele datos a la CPU. <span style="color:var(--teal-d);font-weight:600">Verde</span> = el dato estaba en la caché. <span style="color:#9a6b00;font-weight:600">Amarillo</span> = hubo que ir a la RAM.</p>
+  <div class="row">
+    <label for="csel" style="margin:0">Caché:</label>
+    <select id="csel">
+      <option value="0">Sin caché (0 %)</option>
+      <option value="0.5">Pequeña (50 %)</option>
+      <option value="0.8" selected>Mediana (80 %)</option>
+      <option value="0.95">Grande (95 %)</option>
+    </select>
+    <button class="btn" id="pedir">Pedir 20 datos</button>
+  </div>
+  <div id="cuad" aria-label="Resultado de cada dato pedido"></div>
+  <div class="stats" id="cres" aria-live="polite" style="margin-top:.6rem"></div>
+
+  <h3>Reto 3: une cada pieza con su analogía</h3>
+  <div id="match"></div>
+  <button class="btn" id="mcheck" style="margin-top:.6rem">Comprobar</button>
+  <div class="fb" id="mfb" aria-live="polite"></div>
+
+  <h3>Reto 4: ¿mito o verdad?</h3>
+  <div id="mitos"></div>
+</section>
+
+<section id="repaso">
+  <h2>Repaso: comprueba lo aprendido</h2>
+  <div id="quiz"></div>
+  <p class="score" id="score" aria-live="polite"></p>
+</section>
+
+<section id="inferencias">
+  <h2>Lo que concluimos</h2>
+  <p>Más frecuencia en la CPU no garantiza más rendimiento, porque si los datos no llegan a tiempo, parte de su capacidad queda sin usar.</p>
+  <p>Mayor capacidad de memoria no significa mayor velocidad. Por eso se combinan niveles: la jerarquía busca un equilibrio entre velocidad, capacidad, costo y latencia.</p>
+  <p>La localidad de los datos hace que las cachés sean efectivas y reduce los accesos lentos a la RAM. El objetivo no es eliminar la diferencia de velocidad, sino que el procesador espere con menos frecuencia.</p>
+</section>
+
+<section id="referencias" style="border:0">
+  <h2>Referencias</h2>
+  <ul>
+    <li>Patterson, D. A., &amp; Hennessy, J. L. <i>Computer Organization and Design: The Hardware/Software Interface.</i> Morgan Kaufmann.</li>
+    <li>Stallings, W. <i>Computer Organization and Architecture.</i> Pearson.</li>
+    <li>Hennessy, J. L., &amp; Patterson, D. A. <i>Computer Architecture: A Quantitative Approach.</i> Morgan Kaufmann.</li>
+    <li>Intel Corporation. <i>Intel® 64 and IA-32 Architectures Software Developer’s Manual.</i> Intel.</li>
+    <li>Microsoft. <i>Microsoft Learn: Windows hardware and architecture documentation.</i></li>
+  </ul>
+</section>
+</main>
+<footer>
+  Corporación Universitaria de Ciencia y Desarrollo (UNICIENCIA) · Asignatura ISO 203 · Docente: Wilmer Callejas · Bogotá, Colombia, 2026<br>
+  Integrantes: David López · Zhayd Ardila
+</footer>
+
+<script>
+/* Demo del héroe: modelo simple L1 = 1 ns, RAM = 80 ns, trabajo útil = 5 ns por dato */
+const hit = document.getElementById('hit');
+function demo(){
+  const h = +hit.value / 100, t = 1 + (1 - h) * 80, u = 5 / (5 + t) * 100;
+  document.getElementById('hitv').textContent = hit.value;
+  document.getElementById('t').textContent = t.toFixed(1) + ' ns';
+  document.getElementById('u').textContent = u.toFixed(0) + ' %';
+  const w = document.getElementById('work');
+  w.style.width = u + '%';
+  w.textContent = u > 22 ? 'Trabaja' : '';
+  document.getElementById('wait').textContent = u < 78 ? 'Espera' : '';
+}
+hit.addEventListener('input', demo); demo();
+
+/* Preguntas: a = índice correcto, why = explicación */
+function build(el, items, onDone){
+  let right = 0, done = 0;
+  items.forEach((q, i) => {
+    const box = document.createElement('div'); box.style.margin = '1.6rem 0';
+    box.innerHTML = `<h3>${q.title}</h3><p>${q.text}</p>`;
+    const fb = document.createElement('div'); fb.className = 'fb';
+    const btns = q.opts.map((o, k) => {
+      const b = document.createElement('button'); b.className = 'opt'; b.textContent = o;
+      b.onclick = () => {
+        if (box.dataset.done) return;
+        box.dataset.done = 1; done++;
+        const good = k === q.a; if (good) right++;
+        b.classList.add(good ? 'ok' : 'no'); if (!good) btns[q.a].classList.add('ok');
+        fb.innerHTML = (good ? '<b>Correcto.</b> ' : '<b>No exactamente.</b> ') + q.why;
+        fb.classList.add('show');
+        if (onDone) onDone(right, done, items.length);
+      };
+      box.appendChild(b); return b;
+    });
+    box.appendChild(fb); el.appendChild(box);
+  });
+}
+
+build(document.getElementById('escenarios'), [
+  {title:'Situación 1: el editor de video', text:'Un programa de edición recorre un video enorme, cuadro por cuadro, y la CPU pasa gran parte del tiempo parada. Los datos nuevos vienen casi siempre de la RAM. ¿Qué ayuda más?',
+   opts:['Subir la frecuencia de la CPU','Una caché más grande y precarga de los datos que vienen','Quitar la memoria RAM'], a:1,
+   why:'La precarga trae los datos antes de que se pidan y una caché mayor guarda más. Su límite: si el video es mucho más grande que la caché, parte del acceso seguirá yendo a la RAM.'},
+  {title:'Situación 2: el mismo dato, una y otra vez', text:'Un juego consulta cientos de veces por segundo la posición del jugador, que casi no cambia. ¿Por qué esto rinde bien en una caché?',
+   opts:['Por la localidad temporal: lo usado hace poco se vuelve a usar','Porque la RAM es más rápida con datos repetidos','Porque la caché es más grande que la RAM'], a:0,
+   why:'El dato queda en L1 y se entrega en ~1 ns. Su límite: si el programa pidiera datos siempre nuevos, la caché casi no ayudaría.'},
+  {title:'Situación 3: ¿comprar más RAM?', text:'Alguien compra el doble de RAM esperando que su procesador "espere menos". El programa ya cabía en la RAM antigua. ¿Qué se puede inferir?',
+   opts:['Mejorará mucho, porque más capacidad es más velocidad','Probablemente casi no cambie: más capacidad no implica menor latencia','Empeorará, porque la RAM nueva ocupa la caché'], a:1,
+   why:'Capacidad y velocidad son cosas distintas. Más RAM ayuda si faltaba espacio, pero no acorta el tiempo de cada acceso. La solución depende del problema real.'}
+]);
+
+const score = document.getElementById('score');
+build(document.getElementById('quiz'), [
+  {title:'Pregunta 1', text:'¿Qué es un cuello de botella en este contexto?', opts:['Cuando la RAM se llena','Cuando la CPU calcula más rápido de lo que la memoria entrega datos','Cuando la caché es muy grande'], a:1,
+   why:'La parte más lenta del camino limita el rendimiento de todo el conjunto.'},
+  {title:'Pregunta 2', text:'¿Qué nivel de memoria suele ser el más rápido y el más pequeño?', opts:['RAM','Caché L3','Caché L1'], a:2,
+   why:'Los niveles más cercanos a la CPU son más rápidos y pequeños; L3 y la RAM ganan capacidad a cambio de latencia.'},
+  {title:'Pregunta 3', text:'¿Cuál es la meta realista de la jerarquía de memoria?', opts:['Eliminar por completo la diferencia de velocidad','Que el procesador espere con menos frecuencia','Reemplazar la RAM por caché'], a:1,
+   why:'La diferencia de velocidad no desaparece; se disminuye la frecuencia con que la CPU tiene que acudir a niveles lentos.'}
+], (r, d, n) => { score.textContent = d < n ? `Llevas ${r} de ${d} respondidas.` : `Resultado final: ${r} de ${n} correctas.`; });
+
+/* Reto 1: ordenar */
+(function(){
+  const niveles=['Caché L1','Caché L2','Caché L3','RAM'];
+  const box=document.getElementById('ord'), fb=document.getElementById('ordfb');
+  let next=0, fails=0;
+  function start(){
+    next=0; fails=0; box.innerHTML=''; fb.className='fb';
+    niveles.map((n,i)=>({n,i})).sort(()=>Math.random()-.5).forEach(o=>{
+      const b=document.createElement('button'); b.className='chip'; b.textContent=o.n;
+      b.onclick=()=>{
+        if(b.classList.contains('done')) return;
+        if(o.i===next){
+          next++; b.classList.add('done'); b.textContent=next+'. '+o.n;
+          if(next===niveles.length){
+            fb.innerHTML='<b>¡Orden correcto!</b> Más cerca de la CPU significa más rápido y más pequeño; más lejos, más lento y más grande.'+(fails?` Te equivocaste ${fails} ${fails===1?'vez':'veces'}.`:' Sin errores.');
+            fb.className='fb show';
+          }
+        } else {
+          fails++; b.classList.add('bad'); setTimeout(()=>b.classList.remove('bad'),600);
+          fb.innerHTML='Ese no es el siguiente más rápido. Piensa cuál está más pegado al procesador.'; fb.className='fb show';
+        }
+      };
+      box.appendChild(b);
+    });
+  }
+  document.getElementById('ordreset').onclick=start; start();
+})();
+
+/* Reto 2: simulador de 20 datos (cache = 1 ns, RAM = +80 ns, trabajo = 5 ns por dato) */
+(function(){
+  const sel=document.getElementById('csel'), cu=document.getElementById('cuad'), res=document.getElementById('cres');
+  document.getElementById('pedir').onclick=()=>{
+    const h=+sel.value, N=20; let t=0, aciertos=0, html='';
+    for(let i=0;i<N;i++){
+      const ok=Math.random()<h; if(ok) aciertos++;
+      t+=1+(ok?0:80);
+      html+=`<span class="sq ${ok?'h':'m'}" title="${ok?'En la caché':'Fue a la RAM'}"></span>`;
+    }
+    const util=5*N/(5*N+t)*100;
+    cu.innerHTML=html;
+    res.innerHTML=`<span>Aciertos<br><b>${aciertos} de ${N}</b></span><span>Tiempo total<br><b>${t} ns</b></span><span>Uso útil de la CPU<br><b>${util.toFixed(0)} %</b></span>`;
+  };
+})();
+
+/* Reto 3: unir piezas */
+(function(){
+  const filas=[['El cocinero','CPU'],['El mesón de trabajo','Caché'],['La despensa del restaurante','RAM']];
+  const box=document.getElementById('match'), fb=document.getElementById('mfb'), sels=[];
+  filas.forEach(f=>{
+    const r=document.createElement('div'); r.className='row';
+    const id='m'+sels.length;
+    r.innerHTML=`<label for="${id}" style="margin:0;min-width:15rem">${f[0]}</label>`;
+    const se=document.createElement('select'); se.id=id;
+    ['Elige…','CPU','Caché','RAM'].forEach(o=>{const op=document.createElement('option'); op.textContent=o; op.value=o; se.appendChild(op);});
+    r.appendChild(se); box.appendChild(r); sels.push(se);
+  });
+  document.getElementById('mcheck').onclick=()=>{
+    let bien=0, vacias=0;
+    sels.forEach((se,i)=>{ if(se.value==='Elige…') vacias++; else if(se.value===filas[i][1]) bien++; });
+    fb.innerHTML = vacias ? 'Elige una opción en cada fila.' :
+      bien===3 ? '<b>¡Perfecto!</b> El cocinero calcula, el mesón guarda lo que usa seguido y la despensa guarda mucho pero queda lejos.' :
+      `<b>Llevas ${bien} de 3.</b> Pista: lo más pequeño y pegado al cocinero es la caché.`;
+    fb.className='fb show';
+  };
+})();
+
+/* Reto 4: mito o verdad */
+build(document.getElementById('mitos'),[
+  {title:'Afirmación 1', text:'Subir la frecuencia de la CPU siempre hace el computador proporcionalmente más rápido.', opts:['Verdadero','Falso'], a:1,
+   why:'Si los datos no llegan a tiempo, la CPU queda esperando y esa capacidad extra no se aprovecha.'},
+  {title:'Afirmación 2', text:'La caché es más pequeña pero más rápida que la RAM.', opts:['Verdadero','Falso'], a:0,
+   why:'Por eso se usa para guardar lo que la CPU necesita con más frecuencia.'},
+  {title:'Afirmación 3', text:'Comprar más RAM reduce el tiempo que tarda cada acceso a memoria.', opts:['Verdadero','Falso'], a:1,
+   why:'Más RAM aumenta la capacidad, no la velocidad de cada acceso.'},
+  {title:'Afirmación 4', text:'Si un programa reutiliza datos recientes, la caché acierta más veces.', opts:['Verdadero','Falso'], a:0,
+   why:'Es la localidad temporal: lo usado hace poco se vuelve a usar pronto.'}
+]);
+
+/* Guía: qué hacer según el síntoma */
+(function(){
+  const casos={
+   'CPU casi siempre alta':{
+     por:'La CPU está tan ocupada que no da abasto. Puede ser un programa pesado, uno que quedó trabado o algo que no debería estar corriendo.',
+     pasos:['En Procesos, haz clic en la columna CPU para ordenar y ver qué programa consume más.','Si es un programa que no estás usando, ciérralo (clic derecho, Finalizar tarea) y vuelve a abrirlo si lo necesitas.','Revisa las extensiones del navegador y quita las que no uses.','Ejecuta un análisis completo en Seguridad de Windows para descartar virus.','Instala las actualizaciones de Windows y del programa que consumía tanto.','Revisa que el plan de energía no esté en ahorro máximo (Configuración, Sistema, Energía).'],
+     si:'Si la CPU está alta porque estás editando video o jugando, es normal: está trabajando. El problema es cuando está alta sin que hagas nada pesado.'},
+   'Memoria casi llena':{
+     por:'La RAM se llenó y el sistema empieza a usar el disco como apoyo, que es mucho más lento. Por eso todo se pone pesado.',
+     pasos:['Cierra pestañas del navegador y programas que no uses. Cada pestaña ocupa memoria.','En Procesos, ordena por Memoria y cierra lo que más consume.','En Inicio (o Aplicaciones de arranque) desactiva lo que no necesites al encender.','Reinicia el equipo: libera la memoria acumulada.','En Rendimiento, Memoria, mira el tipo (por ejemplo DDR4) y las ranuras usadas: si hay una libre, podrías ampliar.'],
+     si:'Si después de esto sigue llena en el uso normal, el equipo necesita más RAM. Comprueba el tipo y si tu modelo permite ampliarla antes de comprar.'},
+   'Disco al 100 %':{
+     por:'El disco es el nivel más lento de la jerarquía. Si el programa lo está usando todo el tiempo, la CPU pasa mucho rato esperando.',
+     pasos:['En Rendimiento, Disco, mira arriba a la derecha si dice HDD (mecánico) o SSD.','Libera espacio: desinstala programas que no uses y vacía la papelera. Procura no tener el disco casi lleno.','En Inicio, desactiva programas que arrancan solos.','Reinicia y espera unos minutos: a veces Windows está actualizando o indexando.','Revisa en Procesos qué programa usa más el disco.'],
+     si:'Si es un HDD, cambiarlo por un SSD suele ser la mejora más notoria. Haz copia de tus archivos antes de cualquier cambio.'},
+   'Se calienta y suena fuerte':{
+     por:'Cuando el procesador se calienta demasiado, baja su velocidad por seguridad. Va más lento aunque no esté saturado.',
+     pasos:['Apoya el equipo sobre una superficie dura y plana, nunca en cama o sofá.','Verifica que las rejillas de ventilación no estén tapadas.','Con el equipo apagado y desconectado, sopla suavemente las rejillas con aire (sin meter objetos).','Cierra programas que consuman mucha CPU.','Evita usarlo al sol o en lugares muy calientes.'],
+     si:'Si sigue sobrecalentándose después de limpiar, puede necesitar mantenimiento interno (pasta térmica, ventilador). Eso sí es para un técnico.'},
+   'Todo se ve normal pero va lento':{
+     por:'Si ninguna pieza está saturada, el problema puede estar en otro lado: internet, el navegador o el sistema sin actualizar.',
+     pasos:['Reinicia el equipo completamente (Reiniciar, no solo suspender).','Comprueba tu conexión: prueba el mismo sitio desde otro dispositivo.','Actualiza Windows y el navegador.','Prueba otro navegador o desactiva las extensiones.','Pasa un análisis completo con Seguridad de Windows.'],
+     si:'Si solo falla un programa, desinstálalo y vuelve a instalarlo. Si falla todo y nada funciona, entonces conviene consultar a un técnico.'}
+  };
+  const box=document.getElementById('sint'), plan=document.getElementById('plan');
+  Object.keys(casos).forEach(k=>{
+    const b=document.createElement('button'); b.className='chip'; b.textContent=k;
+    b.onclick=()=>{
+      box.querySelectorAll('.chip').forEach(c=>c.classList.remove('sel')); b.classList.add('sel');
+      const c=casos[k];
+      plan.style.display='block';
+      plan.innerHTML=`<h3>${k}</h3><p><b>Por qué pasa:</b> ${c.por}</p><p style="margin-bottom:0"><b>Qué hacer, en orden:</b></p><ul class="chk">`+
+        c.pasos.map((p,i)=>`<li><label><input type="checkbox"><span>${p}</span></label></li>`).join('')+`</ul><p style="margin-bottom:0"><b>Si no mejora:</b> ${c.si}</p>`;
+    };
+    box.appendChild(b);
+  });
+})();
+</script>
+</body>
+</html>
